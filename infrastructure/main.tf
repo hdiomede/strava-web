@@ -21,8 +21,8 @@ resource "aws_dynamodb_table" "basic-dynamodb-table-2" {
   billing_mode   = "PAY_PER_REQUEST"
   read_capacity  = 20
   write_capacity = 20
-  hash_key       = "RequestId"
-  range_key      = "TaxId"
+  hash_key       = "TaxId"
+  range_key      = "RequestId"
 
 
   stream_enabled = true
