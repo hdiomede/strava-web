@@ -9,6 +9,13 @@ data "archive_file" "lambda_zip" {
     source_dir = "../src/hello"
 }
 
+data "archive_file" "lambda_generator" {
+    type = "zip"
+
+    output_path = "${path.module}/build/generator.zip"
+    source_dir = "../src/generator"
+}
+
 resource "aws_dynamodb_table" "basic-dynamodb-table-2" {
   name           = "Request"
   billing_mode   = "PAY_PER_REQUEST"
@@ -65,6 +72,14 @@ resource "aws_s3_bucket_object" "lambda_hello_world" {
   etag = filemd5(data.archive_file.lambda_zip.output_path)
 }
 
+resource "aws_s3_bucket_object" "lambda_generator_s3" {
+  bucket = aws_s3_bucket.my_bucket.bucket
+  key = "generator.zip"
+
+  source = data.archive_file.lambda_generator.output_path
+  etag = filemd5(data.archive_file.lambda_generator.output_path)
+}
+
 resource "aws_lambda_function" "test_lambda" {
   filename = "${path.module}/build/hello.zip"
   function_name = "hello_world"
@@ -105,6 +120,32 @@ resource "aws_lambda_function" "test_lambda_s3" {
 
   handler = "hello.handler"
   runtime = "nodejs12.x"
+
+  timeout = 300
+
+  environment {
+    variables = {
+        CLIENT_SECRET = "123"
+        ACCESS_KEY = "456"
+    }
+  }
+}
+
+
+resource "aws_lambda_function" "generator_lambda_s3" {
+  s3_bucket = aws_s3_bucket.my_bucket.id
+  s3_key = aws_s3_bucket_object.lambda_generator_s3.key
+  
+  source_code_hash = data.archive_file.lambda_generator.output_base64sha256
+  
+  function_name = "generator"
+  role = aws_iam_role.lambda_role.arn
+
+  handler = "index.handler"
+  runtime = "nodejs12.x"
+
+  timeout = 300
+
   environment {
     variables = {
         CLIENT_SECRET = "123"
