@@ -153,3 +153,9 @@ resource "aws_lambda_function" "generator_lambda_s3" {
     }
   }
 }
+
+resource "aws_lambda_event_source_mapping" "example" {
+  event_source_arn  = aws_dynamodb_table.basic-dynamodb-table-2.stream_arn
+  function_name     = aws_lambda_function.test_lambda_s3.arn
+  starting_position = "LATEST"
+}
